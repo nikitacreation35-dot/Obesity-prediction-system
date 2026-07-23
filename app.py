@@ -29,7 +29,7 @@ def predict_obesity(
 
     # 1. Empty input check 
     if any(v is None or str(v).strip() == "" for v in values):
-        return "Please fill in all the input fields and select all dropdown options."
+        return "❌ Please fill in all the input fields and select all dropdown options."
 
     # 2. Type casting
     try:
@@ -68,8 +68,23 @@ def predict_obesity(
 
         prediction = deployed_knn.predict(input_data)
         
-        result_class = str(prediction[0]).replace("_", " ")
-        return f"🩺 Assessment Result\n\nPredicted Category: {result_class}"
+        # --- CODE BLOCK: ADDED HUMAN-READABLE CATEGORY MAPPING ---
+        # Reverse mapping the integer back to a highly descriptive string
+        category_map = {
+            0: "Insufficient Weight (Underweight)",
+            1: "Normal Weight (Healthy weight range)",
+            2: "Overweight Level I (Pre-obesity)",
+            3: "Overweight Level II (Pre-obesity)",
+            4: "Obesity Type I (Low-risk obesity)",
+            5: "Obesity Type II (Moderate-risk obesity)",
+            6: "Obesity Type III (High-risk obesity)"
+        }
+        
+        # Safely get the mapped string, fallback to raw number if something goes wrong
+        result_class = category_map.get(prediction[0], f"Unknown Category Code: {prediction[0]}")
+        
+        return f"🩺 Assessment Result\n\nPredicted Category: {result_class}\n\nPlease consult a healthcare provider for personalized medical advice."
+        # ---------------------------------------------------------
 
     except Exception as e:
         error_trace = traceback.format_exc()
@@ -79,8 +94,6 @@ def predict_obesity(
 # ==========================================================
 # Interface Setup (Enhanced Layout)
 # ==========================================================
-# --- CODE BLOCK: ENHANCED UI WITH GR.BLOCKS ---
-# Using gr.Blocks for custom horizontal layout and theming
 with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue", neutral_hue="slate")) as app:
     
     # Header
@@ -126,7 +139,7 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue", neutral_hue="slate")) as
         clear_btn = gr.ClearButton(size="lg")
     
     with gr.Row():
-        result_box = gr.Textbox(label="Assessment Result", lines=3, interactive=False)
+        result_box = gr.Textbox(label="Assessment Result", lines=4, interactive=False)
 
     # Footer
     gr.Markdown("""
@@ -137,8 +150,7 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue", neutral_hue="slate")) as
     * **GitHub:** [Check out my projects](YOUR_GITHUB_URL_HERE)
     """)
 
-    # --- Wire up the logic ---
-    # Ensure this array exactly matches the 16 arguments of predict_obesity!
+    # Wire up the logic
     input_components = [
         Age, Gender, Height, Weight, CALC, SCC, CAEC, FAVC, FCVC, NCP,
         SMOKE, CH2O, family_history_with_overweight, FAF, TUE, MTRANS
@@ -146,7 +158,6 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue", neutral_hue="slate")) as
     
     submit_btn.click(fn=predict_obesity, inputs=input_components, outputs=result_box)
     clear_btn.add(input_components + [result_box])
-# ----------------------------------------------
 
 # ==========================================================
 # Launch Configuration
